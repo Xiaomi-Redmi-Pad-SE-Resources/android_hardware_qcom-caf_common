@@ -52,6 +52,60 @@ ifneq ($(filter $(LEGACY_UM_PLATFORMS),$(TARGET_BOARD_PLATFORM)),)
     $(call soong_config_set,qti_thermal,netlink,false)
 endif
 
+# Add qtiaudio to soong config namespaces
+SOONG_CONFIG_NAMESPACES += qtiaudio
+
+# Add supported variables to qtiaudio config
+SOONG_CONFIG_qtiaudio += \
+    feature_ext_amplifier \
+    feature_extended_compress_format \
+    feature_gef_support \
+    feature_gki \
+    feature_hal_v7 \
+    feature_instance_id \
+    feature_sound_trigger
+
+# Set default values for qtiaudio config
+SOONG_CONFIG_qtiaudio_feature_ext_amplifier ?= false
+SOONG_CONFIG_qtiaudio_feature_extended_compress_format ?= false
+SOONG_CONFIG_qtiaudio_feature_gef_support ?= false
+SOONG_CONFIG_qtiaudio_feature_gki ?= false
+SOONG_CONFIG_qtiaudio_feature_hal_v7 ?= false
+SOONG_CONFIG_qtiaudio_feature_instance_id ?= false
+SOONG_CONFIG_qtiaudio_feature_sound_trigger ?= false
+
+ifeq ($(AUDIO_FEATURE_ENABLED_EXT_AMPLIFIER),true)
+    SOONG_CONFIG_qtiaudio_feature_ext_amplifier := true
+endif
+
+ifeq ($(AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT),true)
+    SOONG_CONFIG_qtiaudio_feature_extended_compress_format := true
+endif
+
+ifeq ($(AUDIO_FEATURE_ENABLED_GEF_SUPPORT),true)
+    SOONG_CONFIG_qtiaudio_feature_gef_support := true
+endif
+
+ifeq ($(AUDIO_FEATURE_ENABLED_GKI),true)
+    SOONG_CONFIG_qtiaudio_feature_gki := true
+endif
+
+ifeq ($(AUDIO_FEATURE_ENABLED_HAL_V7), true)
+    SOONG_CONFIG_qtiaudio_feature_hal_v7 := true
+endif
+
+ifeq ($(AUDIO_FEATURE_ENABLED_INSTANCE_ID),true)
+    SOONG_CONFIG_qtiaudio_feature_instance_id := true
+endif
+
+ifeq ($(BOARD_SUPPORTS_SOUND_TRIGGER),true)
+    SOONG_CONFIG_qtiaudio_feature_sound_trigger := true
+endif
+
+ifeq ($(BOARD_SUPPORTS_SOUND_TRIGGER_HAL),true)
+    SOONG_CONFIG_qtiaudio_feature_sound_trigger := true
+endif
+
 # Add qtidisplay to soong config namespaces
 SOONG_CONFIG_NAMESPACES += qtidisplay
 
@@ -64,10 +118,16 @@ SOONG_CONFIG_qtidisplay += \
     displayconfig_enabled \
     udfps \
     default \
+    master_side_cp \
+    shift_horizontal \
+    shift_vertical \
     var1 \
     var2 \
     var3 \
+    wide_color \
     target_no_raw10_custom_format \
+    target_uses_aligned_ycbcr_height \
+    target_uses_aligned_ycrcb_height \
     target_uses_unaligned_nv21_zsl \
     target_uses_unaligned_ycrcb \
     target_uses_ycrcb_camera_encode \
@@ -82,19 +142,49 @@ SOONG_CONFIG_qtidisplay_gralloc4 ?= false
 SOONG_CONFIG_qtidisplay_displayconfig_enabled ?= false
 SOONG_CONFIG_qtidisplay_udfps ?= false
 SOONG_CONFIG_qtidisplay_default ?= true
+SOONG_CONFIG_qtidisplay_master_side_cp ?= false
+SOONG_CONFIG_qtidisplay_shift_horizontal ?= 0
+SOONG_CONFIG_qtidisplay_shift_vertical ?= 0
 SOONG_CONFIG_qtidisplay_var1 ?= false
 SOONG_CONFIG_qtidisplay_var2 ?= false
 SOONG_CONFIG_qtidisplay_var3 ?= false
+SOONG_CONFIG_qtidisplay_wide_color ?= false
 SOONG_CONFIG_qtidisplay_target_no_raw10_custom_format ?= false
+SOONG_CONFIG_qtidisplay_target_uses_aligned_ycbcr_height ?= false
+SOONG_CONFIG_qtidisplay_target_uses_aligned_ycrcb_height ?= false
 SOONG_CONFIG_qtidisplay_target_uses_unaligned_nv21_zsl ?= false
 SOONG_CONFIG_qtidisplay_target_uses_unaligned_ycrcb ?= false
 SOONG_CONFIG_qtidisplay_target_uses_ycrcb_camera_encode ?= false
 SOONG_CONFIG_qtidisplay_target_uses_ycrcb_camera_preview ?= false
 SOONG_CONFIG_qtidisplay_target_uses_ycrcb_venus_camera_preview ?= false
 
+ifneq ($(TARGET_DISPLAY_SHIFT_HORIZONTAL),)
+    SOONG_CONFIG_qtidisplay_shift_horizontal := $(TARGET_DISPLAY_SHIFT_HORIZONTAL)
+endif
+
+ifneq ($(TARGET_DISPLAY_SHIFT_VERTICAL),)
+    SOONG_CONFIG_qtidisplay_shift_vertical := $(TARGET_DISPLAY_SHIFT_VERTICAL)
+endif
+
+ifeq ($(TARGET_HAS_WIDE_COLOR_DISPLAY), true)
+    SOONG_CONFIG_qtidisplay_wide_color := true
+endif
+
+ifeq ($(TARGET_USES_FOD_ZPOS),true)
+    SOONG_CONFIG_qtidisplay_udfps := true
+endif
+
 # For libgrallocutils features
 ifeq ($(TARGET_NO_RAW10_CUSTOM_FORMAT),true)
     SOONG_CONFIG_qtidisplay_target_no_raw10_custom_format := true
+endif
+
+ifeq ($(TARGET_USES_ALIGNED_YCBCR_HEIGHT),true)
+    SOONG_CONFIG_qtidisplay_target_uses_aligned_ycbcr_height := true
+endif
+
+ifeq ($(TARGET_USES_ALIGNED_YCRCB_HEIGHT),true)
+    SOONG_CONFIG_qtidisplay_target_uses_aligned_ycrcb_height := true
 endif
 
 ifeq ($(TARGET_USES_UNALIGNED_NV21_ZSL),true)
@@ -115,6 +205,16 @@ else ifeq ($(TARGET_USES_YCRCB_VENUS_CAMERA_PREVIEW),true)
     SOONG_CONFIG_qtidisplay_target_uses_ycrcb_venus_camera_preview := true
 endif
 
+# Add rfs to soong config namespaces
+SOONG_CONFIG_NAMESPACES += rfs
+
+# Add supported variables to rfs config
+SOONG_CONFIG_rfs += \
+    mpss_firmware_symlink_target
+
+# Set default values for rfs config
+SOONG_CONFIG_rfs_mpss_firmware_symlink_target ?= firmware_mnt
+
 # Add rmnetctl to soong config namespaces
 SOONG_CONFIG_NAMESPACES += rmnetctl
 
@@ -134,8 +234,10 @@ TARGET_USES_MEDIA_EXTENSIONS := true
 # Allow building audio encoders
 TARGET_USES_QCOM_MM_AUDIO := true
 
-# Enable color metadata
-TARGET_USES_COLOR_METADATA := true
+# Enable color metadata on UM platforms that support it
+ifneq ($(filter msm8937 msm8953 msm8996,$(TARGET_BOARD_PLATFORM)),)
+    TARGET_USES_COLOR_METADATA := true
+endif
 
 # Enable DRM PP driver on UM platforms that support it
 ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
@@ -144,7 +246,7 @@ ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FA
 endif
 
 # Enable Gralloc4 on UM platforms that support it
-ifneq ($(filter $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+ifneq ($(filter $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     SOONG_CONFIG_qtidisplay_gralloc4 := true
 endif
 
@@ -171,8 +273,11 @@ ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FA
     TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS += | (1 << 27)
 endif
 
-# List of targets that use master side content protection
+# Enable master side content protection on UM platforms that support it
 MASTER_SIDE_CP_TARGET_LIST := msm8996 $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY)
+ifneq ($(filter $(MASTER_SIDE_CP_TARGET_LIST),$(TARGET_BOARD_PLATFORM)),)
+    SOONG_CONFIG_qtidisplay_master_side_cp := true
+endif
 
 # Opt-in for old rmnet_data driver
 ifeq ($(filter $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
