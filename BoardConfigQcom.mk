@@ -24,7 +24,8 @@ UM_PLATFORMS := \
     $(UM_5_4_FAMILY) \
     $(UM_5_10_FAMILY) \
     $(UM_5_15_FAMILY) \
-    $(UM_5_15_LEGACY_FAMILY)
+    $(UM_5_15_LEGACY_FAMILY) \
+    $(UM_6_1_FAMILY)
 
 LEGACY_UM_PLATFORMS := \
     $(UM_3_18_FAMILY) \
@@ -43,7 +44,8 @@ QSSI_SUPPORTED_PLATFORMS := \
     $(UM_5_4_FAMILY) \
     $(UM_5_10_FAMILY) \
     $(UM_5_15_FAMILY) \
-    $(UM_5_15_LEGACY_FAMILY)
+    $(UM_5_15_LEGACY_FAMILY) \
+    $(UM_6_1_FAMILY)
 
 BOARD_USES_ADRENO := true
 
@@ -121,9 +123,11 @@ SOONG_CONFIG_qtidisplay += \
     master_side_cp \
     shift_horizontal \
     shift_vertical \
+    smmu_proxy \
     var1 \
     var2 \
     var3 \
+    ubwcp_headers \
     wide_color \
     target_no_raw10_custom_format \
     target_uses_aligned_ycbcr_height \
@@ -145,9 +149,11 @@ SOONG_CONFIG_qtidisplay_default ?= true
 SOONG_CONFIG_qtidisplay_master_side_cp ?= false
 SOONG_CONFIG_qtidisplay_shift_horizontal ?= 0
 SOONG_CONFIG_qtidisplay_shift_vertical ?= 0
+SOONG_CONFIG_qtidisplay_smmu_proxy ?= false
 SOONG_CONFIG_qtidisplay_var1 ?= false
 SOONG_CONFIG_qtidisplay_var2 ?= false
 SOONG_CONFIG_qtidisplay_var3 ?= false
+SOONG_CONFIG_qtidisplay_ubwcp_headers ?= false
 SOONG_CONFIG_qtidisplay_wide_color ?= false
 SOONG_CONFIG_qtidisplay_target_no_raw10_custom_format ?= false
 SOONG_CONFIG_qtidisplay_target_uses_aligned_ycbcr_height ?= false
@@ -240,24 +246,34 @@ ifneq ($(filter msm8937 msm8953 msm8996,$(TARGET_BOARD_PLATFORM)),)
 endif
 
 # Enable DRM PP driver on UM platforms that support it
-ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY) $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     SOONG_CONFIG_qtidisplay_drmpp := true
     TARGET_USES_DRM_PP := true
 endif
 
 # Enable Gralloc4 on UM platforms that support it
-ifneq ($(filter $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+ifneq ($(filter $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY) $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     SOONG_CONFIG_qtidisplay_gralloc4 := true
 endif
 
 # Select AR variant of A-HAL dependencies
-ifneq ($(filter $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+ifneq ($(filter $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY) $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     TARGET_USES_QCOM_AUDIO_AR ?= true
 endif
 
 # Enable displayconfig on every UM platform
 ifeq ($(filter $(UM_PLATFORMS),$(TARGET_BOARD_PLATFORM)),)
     SOONG_CONFIG_qtidisplay_displayconfig_enabled := true
+endif
+
+# Enable SMMU proxy on UM platforms that support it
+ifneq ($(filter $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+    SOONG_CONFIG_qtidisplay_smmu_proxy := true
+endif
+
+# Expose UBWCP headers to UM platforms that require it
+ifneq ($(filter $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+    SOONG_CONFIG_qtidisplay_ubwcp_headers := true
 endif
 
 TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS ?= 0
@@ -269,7 +285,7 @@ TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS += | (1 << 13)
 TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS += | (1 << 21)
 
 # Mark GRALLOC_USAGE_PRIVATE_HEIF_VIDEO as valid gralloc bit on UM platforms that support it
-ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY) $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS += | (1 << 27)
 endif
 
@@ -280,14 +296,19 @@ ifneq ($(filter $(MASTER_SIDE_CP_TARGET_LIST),$(TARGET_BOARD_PLATFORM)),)
 endif
 
 # Opt-in for old rmnet_data driver
-ifeq ($(filter $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+ifeq ($(filter $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY) $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     SOONG_CONFIG_rmnetctl_old_rmnet_data := true
 endif
 
 # Use full QTI gralloc struct for GKI 2.0 targets
-ifneq ($(filter $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+ifneq ($(filter $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY) $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     TARGET_GRALLOC_HANDLE_HAS_CUSTOM_CONTENT_MD_RESERVED_SIZE ?= true
     TARGET_GRALLOC_HANDLE_HAS_RESERVED_SIZE ?= true
+endif
+
+# Use QTI gralloc UBWCP struct
+ifneq ($(filter $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+    TARGET_GRALLOC_HANDLE_HAS_UBWCP_FORMAT ?= true
 endif
 
 ifneq ($(filter $(UM_3_18_HAL_FAMILY),$(TARGET_BOARD_PLATFORM)),)
@@ -319,6 +340,8 @@ else ifneq ($(filter $(UM_5_15_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     QCOM_HARDWARE_VARIANT := sm8550
 else ifneq ($(filter $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     QCOM_HARDWARE_VARIANT := sm6225
+else ifneq ($(filter $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+    QCOM_HARDWARE_VARIANT := sm8650
 else
     MSM_VIDC_TARGET_LIST := $(TARGET_BOARD_PLATFORM)
     QCOM_HARDWARE_VARIANT := $(TARGET_BOARD_PLATFORM)
@@ -333,15 +356,17 @@ PRODUCT_SOONG_NAMESPACES += hardware/qcom-caf/bootctrl
 
 # Add display-commonsys to PRODUCT_SOONG_NAMESPACES for QSSI supported platforms
 ifneq ($(filter $(QSSI_SUPPORTED_PLATFORMS),$(TARGET_BOARD_PLATFORM)),)
-PRODUCT_SOONG_NAMESPACES += \
-    vendor/qcom/opensource/commonsys/display \
-    vendor/qcom/opensource/commonsys-intf/display
+    PRODUCT_SOONG_NAMESPACES += \
+        vendor/qcom/opensource/commonsys/display \
+        vendor/qcom/opensource/commonsys-intf/display
 
-ifeq ($(filter $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
-PRODUCT_SOONG_NAMESPACES += \
-    vendor/qcom/opensource/display
-endif
-
+    ifeq ($(filter $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY) $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+        PRODUCT_SOONG_NAMESPACES += \
+            vendor/qcom/opensource/display
+    endif
+    $(call soong_config_set,qtidisplay,headers_namespace,vendor/qcom/opensource/commonsys-intf/display)
+else
+    $(call soong_config_set,qtidisplay,headers_namespace,$(QCOM_SOONG_NAMESPACE)/display)
 endif
 
 # Add data-ipa-cfg-mgr to PRODUCT_SOONG_NAMESPACES if needed
@@ -352,6 +377,8 @@ ifneq ($(USE_DEVICE_SPECIFIC_DATA_IPA_CFG_MGR),true)
         PRODUCT_SOONG_NAMESPACES += hardware/qcom-caf/sm8450/data-ipa-cfg-mgr
     else ifneq ($(filter $(UM_5_15_FAMILY),$(TARGET_BOARD_PLATFORM)),)
         PRODUCT_SOONG_NAMESPACES += hardware/qcom-caf/sm8550/data-ipa-cfg-mgr
+    else ifneq ($(filter $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+        PRODUCT_SOONG_NAMESPACES += hardware/qcom-caf/sm8650/data-ipa-cfg-mgr
     endif
 endif
 
