@@ -3,16 +3,13 @@ include hardware/qcom-caf/common/qcom_defs.mk
 
 UM_3_18_HAL_FAMILY := msm8996
 UM_4_4_HAL_FAMILY := msm8998
-UM_4_19_FAMILY := kona lito
 
 ifeq (,$(TARGET_ENFORCES_QSSI))
 UM_3_18_HAL_FAMILY += msm8937 msm8953
 UM_4_4_HAL_FAMILY += sdm660
-UM_4_19_FAMILY += bengal
 else
 UM_4_9_LEGACY_FAMILY := msm8937 msm8953
 UM_4_19_LEGACY_FAMILY := sdm660
-UM_5_15_LEGACY_FAMILY := bengal
 endif
 
 UM_PLATFORMS := \
