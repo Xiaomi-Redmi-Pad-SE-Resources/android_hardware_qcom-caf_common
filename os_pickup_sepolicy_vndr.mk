@@ -4,10 +4,8 @@ ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FA
     include device/qcom/sepolicy_vndr/legacy-um/SEPolicy.mk
 else ifneq ($(filter $(UM_5_10_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     include device/qcom/sepolicy_vndr/sm8450/SEPolicy.mk
-else ifneq ($(filter $(UM_5_15_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+else ifneq ($(filter $(UM_5_15_FAMILY) $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     include device/qcom/sepolicy_vndr/sm8550/SEPolicy.mk
-else ifneq ($(filter $(UM_5_15_LEGACY_FAMILY),$(TARGET_BOARD_PLATFORM)),)
-    include device/qcom/sepolicy_vndr/sm6225/SEPolicy.mk
 else ifneq ($(filter $(UM_6_1_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     include device/qcom/sepolicy_vndr/sm8650/SEPolicy.mk
 else ifneq ($(filter $(UM_6_6_FAMILY),$(TARGET_BOARD_PLATFORM)),)
